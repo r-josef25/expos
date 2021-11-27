@@ -1,0 +1,32 @@
+decl
+	int gcd( int a, int b);
+enddecl
+int gcd(int a, int b){
+decl
+	int temp;
+enddecl
+begin
+	while( a != 0 ) do
+		temp = a;
+		a = b%a;
+		b = temp;
+	endwhile;
+	return b;
+end
+}
+int main()
+{
+decl
+	int t, num, n, answer;
+enddecl
+begin
+	t = exposcall( "Write" , -2, "1st no ");
+	t = exposcall( "Read" , -1, num);
+	t = exposcall( "Write" , -2, "2nd no ");
+	t = exposcall( "Read" , -1, n);
+	answer = gcd (num,n);
+	t = exposcall( "Write" , -2, "GCF ");
+	t = exposcall( "Write" , -2, answer);
+	return 0;
+end
+}

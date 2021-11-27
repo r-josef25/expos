@@ -1,0 +1,17 @@
+int main()
+{
+decl
+	int t, num;
+enddecl
+begin
+	t = exposcall("Fork");
+	breakpoint;
+	num = exposcall("Write", -2, t);
+	if(t != 0)then
+		t = exposcall("Exec","ch13_a1o.xsm");
+	else
+		t = exposcall("Exec","ch13_a1e.xsm");
+	endif;
+	return 0;
+end
+}

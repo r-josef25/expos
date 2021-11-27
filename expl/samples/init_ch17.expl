@@ -1,0 +1,19 @@
+decl
+	int a[10];
+enddecl
+int main()
+{
+decl
+	int t;
+	str a;
+enddecl
+begin
+	t = exposcall( "Write" , -2, "file name:");
+	t = exposcall( "Read" , -1, a);
+	t = exposcall( "Exec" , a);
+	if(t == -1) then
+		t = exposcall( "Write" , -2, "File no fnd");
+	endif;
+	return 0;
+end
+}

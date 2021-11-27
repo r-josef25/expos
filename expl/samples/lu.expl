@@ -1,0 +1,17 @@
+int main()
+{
+decl
+	int t, v, i;
+//	string name;
+enddecl
+begin
+	breakpoint;
+	i = 0;
+	while(i < 16)do
+		v = exposcall("Getuname",i);
+		t = exposcall("Write", -2, v);
+		i = i + 1;
+	endwhile;
+	return 0;
+end
+}

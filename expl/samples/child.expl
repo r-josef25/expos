@@ -1,0 +1,40 @@
+type
+ll
+{
+	int data;
+	ll rem;
+}
+endtype
+int main()
+{
+decl
+	ll head,cur;
+	int n,t,i;
+enddecl
+begin
+	t = initialize();
+	head = alloc();
+	cur = head;
+	i = 0;
+	n = exposcall("Getpid");
+	while(1==1)do
+		cur.data = n*100 + i;
+		i = i + 1;
+		if(i == 10)then 
+			break;
+		endif;
+		cur.rem = alloc();
+		cur = cur.rem;
+	endwhile;
+	i = 0;
+	cur = head;
+	while(cur != null)do
+		t = exposcall("Write", -2, cur.data);
+		head=cur;
+		cur = cur.rem;
+		free(head);
+		i = i + 1;
+	endwhile;
+	return 0;
+end
+}

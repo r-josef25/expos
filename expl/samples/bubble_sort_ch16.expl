@@ -1,0 +1,39 @@
+decl
+	int a[10];
+enddecl
+int main()
+{
+decl
+	int t, n, i, j;
+enddecl
+begin
+	t = exposcall( "Write" , -2, "Enter size");
+	t = exposcall( "Read" , -1, n);
+	t = exposcall( "Write" , -2, "Enter elmnts");
+	i = 0;
+	while(i < n) do
+		t = exposcall( "Read" , -1, a[i]);
+		i = i + 1;
+	endwhile;
+	i = 0;
+	while(i < (n-1)) do
+		j = 0;
+		while(j < (n - 1 - i)) do
+			if( a[j] > a[j+1]) then 
+				t = a[j];
+				a[j] = a[j + 1];
+				a[j + 1] = t;
+			endif;
+			j = j + 1;
+		endwhile;
+		i = i + 1;
+	endwhile;
+	i = 0;
+	t = exposcall( "Write" , -2, "Sorted");
+	while(i < n) do
+		t = exposcall( "Write" , -2, a[i]);
+		i = i + 1;
+	endwhile;
+	return 0;
+end
+}

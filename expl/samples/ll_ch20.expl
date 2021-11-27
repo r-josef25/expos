@@ -1,0 +1,46 @@
+type
+	ll
+	{
+		int data;
+		ll rem;
+	}
+endtype
+int main()
+{
+decl
+	ll head,cur;
+	int n,t,i;
+enddecl
+begin
+	t = initialize();
+	head = alloc();
+	cur = head;
+	t = exposcall("Read", -1, n);
+	i = 0;
+	while(i < n)do
+		cur.data = i+1;
+		i = i + 1;
+		if(i == n)then 
+			break;
+		endif;
+		cur.rem = alloc();
+		cur = cur.rem;
+	endwhile;
+	t = exposcall("Fork");
+	cur = head;
+	if(t != 0)then 
+		cur = cur.rem;
+	endif;
+	while(cur != null)do
+		t = exposcall("Write", -2, cur.data);
+		head=cur;
+		cur = cur.rem;
+		if(cur == null)then 
+			break;
+		endif;
+		cur = cur.rem;
+	//	free(head);
+	endwhile;
+	return 0;
+end
+}

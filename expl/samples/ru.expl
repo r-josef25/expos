@@ -1,0 +1,26 @@
+int main()
+{
+decl
+	int t, fd;
+	string file, fuser, usr;
+enddecl
+begin
+	t = exposcall( "Write", -2, "userName:");
+	t = exposcall("Read", -1, usr);
+	fd = exposcall( "Open", "root");
+	if(fd >= 0)then
+		t = exposcall("Read", fd, file);
+		while(t == 0)do
+			t = exposcall("Seek", fd, 2);
+			t = exposcall("Read", fd, fuser);
+			if(usr == fuser)then
+				t = exposcall("Delete", file);
+			endif;
+			t = exposcall("Seek", fd, 4);
+			t = exposcall("Read", fd, file);
+		endwhile;
+	endif;
+	t = exposcall( "Close", fd);
+	return 0;
+end
+}

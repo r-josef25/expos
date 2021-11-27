@@ -1,0 +1,14 @@
+int main()
+{
+decl
+	int t, name, p;
+enddecl
+begin
+	t = exposcall( "Write" , -2, "Name:");
+	t = exposcall( "Read" , -1, name);
+	t = exposcall( "Write" , -2,  "Permission:");
+	t = exposcall( "Read" , -1, p);
+	t = exposcall( "Create" , name,  p);
+	return 0;
+end
+}
