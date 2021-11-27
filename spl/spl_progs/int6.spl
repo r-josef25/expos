@@ -1,0 +1,92 @@
+alias userSP R0;
+userSP = SP;
+[PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13] = SP;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +11]*512 - 1; 
+alias physicalPageNum R1;
+alias offset R2;
+alias fileDescPhysicalAddr R3;
+physicalPageNum = [PTBR + 2 * ((userSP - 4)/ 512)];
+offset = (userSP - 4) % 512;
+fileDescPhysicalAddr = (physicalPageNum * 512) + offset;
+alias fileDescriptor R4;
+fileDescriptor=[fileDescPhysicalAddr];
+alias sys R1;
+sys = [[PTBR + ((userSP - 5)/512)*2]*512 + (userSP-5)%512];
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = sys;
+if (fileDescriptor >= 0)then
+	alias physicalAddrRetVal R5;
+	physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+	if(fileDescriptor > 7 || fileDescriptor < 0)then
+		[physicalAddrRetVal] = -1;
+	else
+		alias ox R6;
+		ox = [[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11]*512 + 496 + fileDescriptor*2 + 1]; 
+		if([[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11]*512 + 496 + fileDescriptor*2] != FILE)then
+			[physicalAddrRetVal] = -1;
+		else
+			alias ix R7;
+			ix = [OPEN_FILE_TABLE + ox*4];
+			multipush(R0,R1,R2,R3,R4,R5,R6,R7);
+			R1 = 4;
+			R2 = ix;
+			R3 = [SYSTEM_STATUS_TABLE + 1];
+			call MOD_0;
+			multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+			alias lseek R8;
+			alias block R9;
+			lseek = [OPEN_FILE_TABLE + ox*4 +2];
+			block = [INODE_TABLE + ix*16 + (lseek/512) + 8];
+			if(ix == INODE_ROOT)then
+				if(lseek == 8*MAX_FILE_NUM)then
+					[physicalAddrRetVal] = -2;
+				else
+					alias word_addr R10;
+					word_addr = [[PTBR + 2 * ((userSP - 3) / 512)] * 512 + ((userSP - 3) % 512)];
+					[[PTBR + (word_addr/512)*2]*512 + word_addr%512] = [ROOT_FILE + lseek];
+					[OPEN_FILE_TABLE + ox*4 + 2] = lseek + 1;
+					[physicalAddrRetVal] = 0;
+				endif;
+			else
+				if(lseek >= [INODE_TABLE + ix*16 + 2])then
+					[physicalAddrRetVal] = -2;
+				else
+					alias word_addr R10;
+					word_addr = [[PTBR + 2 * ((userSP - 3) / 512)] * 512 + ((userSP - 3) % 512)];
+					multipush(R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+					R1 = 2;
+					R2 = block;
+					R3 = lseek%512;
+					R4 = word_addr;
+					call MOD_3;
+					multipop(R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+					[OPEN_FILE_TABLE + ox*4 + 2] = lseek + 1;
+breakpoint;
+					[physicalAddrRetVal] = 0;
+				endif;
+			endif;
+			multipush(R0,R1,R2,R3,R4,R5,R6,R7,R8,R9);
+			R1 = 5;
+			R2 = ix;
+			R3 = [SYSTEM_STATUS_TABLE + 1];
+			call MOD_0;
+			multipop(R0,R1,R2,R3,R4,R5,R6,R7,R8,R9);
+		endif;
+	endif;
+else
+if(fileDescriptor == -1)then
+	alias word_addr R5;
+	word_addr = [[PTBR + 2 * ((userSP - 3) / 512)] * 512 + ((userSP - 3) % 512)];
+	alias physicalAddrRetVal R6;
+	physicalAddrRetVal = ([PTBR + 2 * (userSP - 1)/ 512] * 512) + ((userSP - 1) % 512);
+	multipush(R0, R1, R2, R3, R4, R5, R6);
+	R1 = 4;
+	R2 = [SYSTEM_STATUS_TABLE + 1];
+	R3 = word_addr;
+	call MOD_4;
+	multipop(R0, R1, R2, R3, R4, R5, R6);
+	[physicalAddrRetVal] = 0;
+endif;
+endif;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13];
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+ireturn;

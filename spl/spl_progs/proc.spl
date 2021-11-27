@@ -1,0 +1,186 @@
+if(R1 == 3)then
+	multipush(R1, R2, R3);
+	R1 = 4;
+	call MOD_1;
+	multipop(R1, R2, R3);
+	multipush(R1, R2, R3);
+	R1 = 2;
+	call MOD_1;
+	multipop(R1, R2, R3);
+	[PROCESS_TABLE + (R2 * 16) + 4] = TERMINATED;
+
+//SET THE USAGE INFO TO BE PRINTED WHEN SHELL IS SCHEDULED AFTER A PROCESS
+if([PROCESS_TABLE + R2*16 + 2] == 1 && [PROCESS_TABLE + R2*16 + 9] != 9)then
+	[75*512 + 4] = 1;
+endif;
+
+	if([PROCESS_TABLE + R2*16 + 9] != 9)then
+		alias ent R4;
+		ent = 0;
+		while(ent < 16)do 
+			if([PROCESS_TABLE + ent*16 + 4] == WAIT_PROCESS && [PROCESS_TABLE + ent*16 + 5] == R2)then
+				[PROCESS_TABLE + ent*16 + 4] = READY;
+			endif;
+			if([PROCESS_TABLE + ent*16 + 2] == R2)then
+				[PROCESS_TABLE + ent*16 + 2] = -1;
+			endif;
+			ent = ent + 1;
+		endwhile;
+	endif;
+	return;
+else
+if ( R1 == 4) then
+	alias pid R2;
+	alias proc R3;
+	proc = (pid*16) + PROCESS_TABLE;
+	alias pg R1;
+	pg = [proc + 14];
+	[pg + 1] = "0000";
+	[pg + 3] = "0000";
+	pg = pg + 4;
+	while( pg < ([proc + 14] + 20))do
+		if( [pg] != -1 )then
+			multipush(R1, R2, R3);
+			R2 = [pg];
+			R1 = 2;
+			call MOD_2;
+			multipop(R1, R2, R3);
+			[pg] = -1;
+			[pg + 1] = "0000";
+		endif;
+		pg = pg + 2;
+	endwhile;
+	alias disk R3;
+	disk = DISK_MAP_TABLE + 2 + pid*10;
+	if([disk] != -1)then
+		multipush(R3);
+		R2 = [disk];
+		R1 = 4;
+		call MOD_2;
+		multipop(R3);
+		[disk] = -1;
+	endif;
+	disk = disk + 1;
+	if([disk] != -1)then
+		multipush(R3);
+		R2 = [disk];
+		R1 = 4;
+		call MOD_2;
+		multipop(R3);
+		[disk] = -1;
+	endif;
+	disk = disk + 5;
+	if([disk] != -1)then
+		multipush(R3);
+		R2 = [disk];
+		R1 = 4;
+		call MOD_2;
+		multipop(R3);
+		[disk] = -1;
+	endif;
+	disk = disk + 1;
+	if([disk] != -1)then
+		multipush(R3);
+		R2 = [disk];
+		R1 = 4;
+		call MOD_2;
+		multipop(R3);
+		[disk] = -1;
+	endif;
+	return;
+else
+if( R1 == 2) then 
+	alias pid R2;
+	alias proc R3;
+	proc = (pid*16) + PROCESS_TABLE;
+	alias uap R1;
+	uap = [proc + 11];
+	alias ix R4;
+	ix = 0;
+	while(ix < 8)do
+		if([(uap+1)*512 -16 + ix*2] == SEMAPHORE)then
+			multipush(R1,R2,R3,R4);
+			R3 = pid;
+			R2 = [(uap+1)*512 - 16 +ix*2 + 1];
+			R1 = 7;
+			call MOD_0;
+			multipop(R1,R2,R3,R4);
+		else
+		if([(uap+1)*512 -16 + ix*2] == FILE)then
+			multipush(R1,R2,R3,R4);
+			R2 = [(uap+1)*512 - 16 +ix*2 + 1];
+			R1 = 4;
+			call MOD_3;
+			multipop(R1,R2,R3,R4);
+		endif;
+		endif;
+		ix = ix + 1;
+	endwhile;
+	multipush(R1, R2, R3);
+	R2 = uap;
+	R1 = 2;
+	call MOD_2;
+	multipop(R1, R2, R3);
+	return;
+else
+if(R1 == 1 )then
+	alias index R1;
+	R0 = -1;
+	index = 0;
+	while(index < MAX_PROC_NUM) do
+		if([PROCESS_TABLE + index*16 + 4] == TERMINATED)then
+			[PROCESS_TABLE + index*16 + 4] = ALLOCATED;
+			[PROCESS_TABLE + index*16 + 14] = PAGE_TABLE_BASE + index*20;
+			[PROCESS_TABLE + index*16 + 15] = 10;
+			R0 = index;
+			break;
+		endif;
+		index = index + 1;
+	endwhile;
+	return;
+else
+if(R1 == 5)then
+	alias pid R2;
+	alias ix R4;
+	ix = 0;
+	while(ix < MAX_FILE_NUM)do
+		if([INODE_TABLE + ix*16 + 1] != -1)then
+			multipush(R2,R4);
+			R1 = 4;
+			R3 = pid; 
+			R2 = ix;
+			call MOD_0;
+			multipop(R2,R4);
+		endif;
+		ix = ix + 1;
+	endwhile;
+	alias id R5;
+	id = 2;
+	while(id < MAX_PROC_NUM)do
+		if(id != pid && [PROCESS_TABLE + id*16 + 4] != TERMINATED)then
+			multipush(R2,R5);
+			R1 = 3;
+			R2 = id;
+			call MOD_1;
+			multipop(R2,R5);
+		endif;
+		id = id + 1;
+	endwhile;
+	ix = 0;
+	while(ix < MAX_FILE_NUM)do
+		if([INODE_TABLE + ix*16 + 1] != -1)then
+			multipush(R2,R4);
+			R1 = 5;
+			R3 = pid; 
+			R2 = ix;
+			call MOD_0;
+			multipop(R2,R4);
+		endif;
+		ix = ix + 1;
+	endwhile;
+	return;
+endif;
+endif;
+endif;
+endif;
+endif;

@@ -1,0 +1,152 @@
+if(R1 == 8)then
+	while([TERMINAL_STATUS_TABLE] == 1) do
+		[PROCESS_TABLE + 16*R2 + 4] = WAIT_TERMINAL;
+		multipush(R2);
+		call MOD_5;
+		multipop(R2);
+	endwhile;
+	[TERMINAL_STATUS_TABLE] = 1;
+	[TERMINAL_STATUS_TABLE + 1] = [SYSTEM_STATUS_TABLE + 1];
+	return;
+else
+if(R1 == 9) then
+	if(R2 != [TERMINAL_STATUS_TABLE + 1] )then
+		R0 = -1;
+		return;
+	endif;
+	[TERMINAL_STATUS_TABLE] = 0;
+	alias p R4;
+	p = 0;
+	while(p<16) do
+		if([PROCESS_TABLE + 16*p + 4] == WAIT_TERMINAL) then
+			[PROCESS_TABLE + 16*p + 4] = READY;
+		endif;
+		p = p + 1; 
+	endwhile;
+	R0 = 1;
+	return;
+else
+if(R1 == 3)then
+	while([DISK_STATUS_TABLE] == 1)do
+		[PROCESS_TABLE + (R2*16) + 4] = WAIT_DISK;
+		multipush(R2);
+		call MOD_5;
+		multipop(R2);
+	endwhile;
+[75*512+2] = [75*512+2] + 1;
+	[DISK_STATUS_TABLE + 4] = [SYSTEM_STATUS_TABLE + 1];
+	[DISK_STATUS_TABLE] = 1;
+	return;
+else
+if(R1 == 6)then
+	alias ix R3;
+	ix = 0;
+	while(ix < MAX_SEM_COUNT)do 
+		if([SEMAPHORE_TABLE + ix*4 + 1] == 0)then
+			break;
+		endif;
+		ix = ix + 1;
+	endwhile;
+	if(ix == MAX_SEM_COUNT)then
+		R0 = -1;
+		return;
+	endif;
+	[SEMAPHORE_TABLE + ix*4 + 1] = 1;
+	[SEMAPHORE_TABLE + ix*4] = -1;
+	R0 = ix;
+	return;
+else
+if(R1==7)then
+	alias sid R2;
+	alias pid R3;
+	if([SEMAPHORE_TABLE + sid*4] == pid)then
+		[SEMAPHORE_TABLE + sid*4] = -1;
+		alias id R4;
+		id = 0;
+		while(id < MAX_PROC_NUM)do
+			if([PROCESS_TABLE + id*16 + 4] == WAIT_SEMAPHORE && [PROCESS_TABLE + id*16 + 5] == sid)then
+				[PROCESS_TABLE + id*16 + 4] = READY;
+			endif;
+			id = id + 1;
+		endwhile;
+	endif;
+	[SEMAPHORE_TABLE + sid*4 + 1] = [SEMAPHORE_TABLE + sid*4 +1] - 1;
+	return;
+else
+if(R1 == 4)then
+	alias ix R2;
+	alias pid R3;
+	while([FILE_STATUS_TABLE + ix*4] != -1)do
+		[PROCESS_TABLE + pid*16 + 4] = WAIT_FILE;
+		[PROCESS_TABLE + pid*16 + 5] = ix;
+		multipush(R2, R3);
+		call MOD_5;
+		multipop(R2, R3);
+	endwhile;
+	if([INODE_TABLE + ix*16 + 1] == -1)then
+		R0 = -1;
+		return;
+	endif;
+	[FILE_STATUS_TABLE + ix*4] = pid;
+	R0 = 0;
+	return;
+else
+if(R1 == 5)then
+	alias ix R2;
+	alias pid R3;
+	if([FILE_STATUS_TABLE + ix*4] != pid)then
+		R0 = -1;
+		return;
+	endif;
+	[FILE_STATUS_TABLE + ix*4] = -1;
+	alias en R4;
+	en = 0;
+	while(en < MAX_PROC_NUM)do
+		if([PROCESS_TABLE + en*16 + 4] == WAIT_FILE && [PROCESS_TABLE + en*16 + 5] == ix)then
+			[PROCESS_TABLE + en*16 + 4] = READY;
+		endif;
+		en = en + 1;
+	endwhile;
+	R0 = 0;
+	return;
+else
+if(R1 == 1)then
+	alias buffer_no R2;
+	alias pid R3;
+	if([BUFFER_TABLE + buffer_no*4 + 2] != -1)then
+		[PROCESS_TABLE + pid*16 + 4] = WAIT_BUFFER;
+		[PROCESS_TABLE + pid*16 + 5] = buffer_no;
+		multipush(R2,R3);
+		call MOD_5;
+		multipop(R2,R3);
+	endif;
+	[BUFFER_TABLE + buffer_no*4 + 2] = pid;
+	return;
+else
+if(R1 == 2)then
+	alias buffer_no R2;
+	alias pid R3;
+	if([BUFFER_TABLE + buffer_no*4 + 2] != pid)then
+		R0 = -1;
+		return;
+	endif;
+	[BUFFER_TABLE + buffer_no*4 + 2] = -1;
+	alias ix R4;
+	ix = 0;
+	while(ix < 16)do 
+		if([PROCESS_TABLE + ix*16 + 4] == WAIT_BUFFER && [PROCESS_TABLE + ix*16 + 5] == buffer_no)then
+			[PROCESS_TABLE + ix*16 + 4] = READY;
+		endif;
+		ix = ix + 1;
+	endwhile;
+	R0 = 0;
+	return;
+endif;
+endif;
+endif;
+endif;
+endif;
+endif;
+endif;
+endif;
+endif;

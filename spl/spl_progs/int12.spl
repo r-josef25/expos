@@ -1,0 +1,35 @@
+alias userSP R0;
+userSP = SP;
+[PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13] = SP;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +11]*512 - 1; 
+alias sys R1;
+sys = [[PTBR + ((userSP - 5)/512)*2]*512 + (userSP-5)%512];
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = sys;
+alias ret R5;
+ret = [PTBR + ((userSP - 1)/512)*2]*512 + (userSP-1)%512;
+
+if([SYSTEM_STATUS_TABLE + 1] != 2)then
+	[ret] = -1;
+else
+	multipush(R0,R1,R5);
+	R1 = 5;
+	R2 = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_1;
+	multipop(R0,R1,R5);
+
+	[PROCESS_TABLE + 2*16 + 4] = TERMINATED;
+	[PROCESS_TABLE + 2*16 + 2] = -1;
+	[PROCESS_TABLE + 2*16 + 3] = -1;
+	[PROCESS_TABLE + 2*16 + 13] = 512*8;
+
+	[SYSTEM_STATUS_TABLE] = 0;
+	[[PTBR + 8*2]*512] = [[PTBR + 4*2]*512 + 1];
+	[PROCESS_TABLE + 16 + 4] = READY;
+	[PROCESS_TABLE + 16 + 5] = 2;
+	[ret] = 0;
+	call MOD_5;
+endif;
+
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13];
+ireturn;

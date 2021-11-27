@@ -1,0 +1,143 @@
+alias userSP R0;
+userSP = SP;
+[PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13] = SP;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +11]*512 - 1; 
+alias sys R1;
+sys = [[PTBR + ((userSP - 5)/512)*2]*512 + (userSP-5)%512];
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = sys;
+alias ret R5;
+ret = [PTBR + ((userSP - 1)/512)*2]*512 + (userSP-1)%512;
+if(sys == 1)then
+	alias pid R3 ;
+	pid = [SYSTEM_STATUS_TABLE + 1];
+	alias ix R2;
+	ix = 0;
+	alias fn R4;
+	fn = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+	while(ix < MAX_FILE_NUM)do
+		if([INODE_TABLE + ix*16 + 1] == fn)then
+			break;
+		endif;
+		ix = ix + 1;
+	endwhile;
+	if(ix != MAX_FILE_NUM)then
+		[ret] = 0;
+	else
+		ix = 0;
+		while(ix < MAX_FILE_NUM)do
+			if([INODE_TABLE + ix*16 + 1] == -1)then
+				break;
+			endif;
+			ix = ix + 1;
+		endwhile;
+		if(ix == MAX_FILE_NUM)then
+			[ret] = -1;
+		else
+			alias per R6;
+			per = [[PTBR + ((userSP - 3)/512)*2]*512 + (userSP-3)%512];
+			alias inode_ent R7;
+			alias root_ent R8;
+			inode_ent = INODE_TABLE + ix*16;
+			root_ent = ROOT_FILE + ix*8;
+			[inode_ent] = DATA;
+			[inode_ent +2] = 0;
+			[inode_ent +1] = fn;
+			[inode_ent +3] = [PROCESS_TABLE + pid*16 + 3];
+			[inode_ent +4] = per;
+			[inode_ent +8] = -1;
+			[inode_ent +9] = -1;
+			[inode_ent +10] = -1;
+			[inode_ent +11] = -1;
+
+			[root_ent] = fn;
+			[root_ent + 1] = 0;
+			[root_ent + 2] = DATA;
+			[root_ent + 3] = [USER_TABLE + [PROCESS_TABLE + pid*16 + 3]*2];
+			[root_ent + 4] = per;
+			[ret] = 0;
+		endif;
+	endif;
+else
+if(sys == 4)then
+	alias pid R3;
+	pid = [SYSTEM_STATUS_TABLE + 1];
+	alias fn R4;
+	fn = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+	alias ix R2;
+	ix = 0;
+	while(ix < MAX_FILE_NUM)do
+		if([INODE_TABLE + ix*16 + 1] == fn)then
+			break;
+		endif;
+		ix = ix + 1;
+	endwhile;
+	if( ix == MAX_FILE_NUM)then
+		[ret] = 0;
+	else
+		if([INODE_TABLE + ix*16] != DATA)then
+			[ret] = -1;
+		else
+			alias userid R8;
+			userid = [PROCESS_TABLE + pid*16 + 3];  
+			if([INODE_TABLE + ix*16 + 4] == 0 && [INODE_TABLE + ix*16 + 3] != userid  && userid != 1)then
+				[ret] = -1;
+			else
+				multipush(R0,R1,R2,R3,R4,R5);
+				R1= 4;
+				call MOD_0;
+				multipop(R0,R1,R2,R3,R4,R5);
+				if([FILE_STATUS_TABLE + ix*4 + 1] != -1)then
+					multipush(R0,R1,R2,R3,R4,R5);
+					R1= 5;
+					call MOD_0;
+					multipop(R0,R1,R2,R3,R4,R5);
+					[ret] = -2;
+				else
+					alias entry R6;
+					entry = INODE_TABLE + ix*16 + 8;
+					alias i R7;
+					i = 0;
+					while(i < 4)do
+						if([entry + i] == -1)then
+							i = i + 1;
+							continue;
+						endif;
+						if(([BUFFER_TABLE + ([entry + i]%MAX_BUFFER)*4] == [entry + i]) && ([BUFFER_TABLE + ([entry + i]%MAX_BUFFER)*4 + 1] == 1))then
+							[BUFFER_TABLE + ([entry + i]%MAX_BUFFER)*4 + 1] = 0;
+						endif;
+						multipush(R0,R1,R2,R3,R4,R5,R6,R7);
+						R1 = 4;
+						R2 = [entry + i];
+						R3 = [SYSTEM_STATUS_TABLE + 1];
+						call MOD_2;
+						multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+						i = i+1;
+					endwhile;
+					entry = INODE_TABLE + ix*16;
+					i = 0;
+					while(i < 16)do
+						[entry + i] = -1;
+						i = i + 1;
+					endwhile;
+					entry = ROOT_FILE + ix*8;
+					[entry] = -1;
+					[entry + 1] = 0;
+					i = 2;
+					while(i < 8)do
+						[entry + i] = -1;
+						i = i + 1;
+					endwhile;
+					multipush(R0,R1,R2,R3,R4,R5,R6,R7);
+					R1= 5;
+					call MOD_0;
+					multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+					[ret] = 0;
+				endif;
+			endif;
+		endif;
+	endif;
+endif;
+endif;
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13];
+ireturn;

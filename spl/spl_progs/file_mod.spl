@@ -1,0 +1,175 @@
+if(R1 == 3)then
+	alias fn R2;
+	alias ix R3;
+	ix = 0;
+	while(ix < MAX_FILE_NUM)do
+		if([INODE_TABLE + ix*16 + 1] == fn)then
+			break;
+		endif;
+		ix = ix + 1;
+	endwhile;
+	if(ix == MAX_FILE_NUM)then
+		R0 = -1;
+		return;
+	endif;
+	multipush(R2,R3);
+	R1 = 4;
+	R2 = ix;
+	R3 = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_0;
+	multipop(R2,R3);
+
+	if(R0 == -1)then
+		return;
+	endif;
+
+	if([INODE_TABLE + ix*16] == EXEC)then
+		multipush(R2,R3);
+		R1 = 5;
+		R2 = ix;
+		R3 = [SYSTEM_STATUS_TABLE + 1];
+		call MOD_0;
+		multipop(R2,R3);
+		R0 = -1;
+		return;
+	endif;
+	alias ox R4;
+	ox = 0;
+	while(ox < MAX_OPENFILE_NUM)do
+		if([OPEN_FILE_TABLE + ox*4] == -1)then
+			break;
+		endif;
+		ox = ox + 1;
+	endwhile;
+
+	if(ox == MAX_OPENFILE_NUM)then
+		multipush(R2,R3,R4);
+		R1 = 5;
+		R2 = ix;
+		R3 = [SYSTEM_STATUS_TABLE + 1];
+		call MOD_0;
+		multipop(R2,R3,R4);
+		R0 = -2;
+		return;
+	endif;
+	if(fn == "root")then
+		[OPEN_FILE_TABLE + ox*4] = INODE_ROOT;
+	else
+		if([FILE_STATUS_TABLE + ix*4 + 1] == -1)then
+			[FILE_STATUS_TABLE + ix*4 + 1] = 1;
+		else
+
+			[FILE_STATUS_TABLE + ix*4 + 1] = [FILE_STATUS_TABLE + ix*4 + 1] + 1;
+		endif;
+		[OPEN_FILE_TABLE + ox*4] = ix;
+	endif;
+	[OPEN_FILE_TABLE + ox*4 + 1] = 1;
+	[OPEN_FILE_TABLE + ox*4 + 2] = 0;
+
+	multipush(R2,R3,R4);
+	R1 = 5;
+	R2 = ix;
+	R3 = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_0;
+	multipop(R2,R3,R4);
+	R0 = ox;
+	return;
+else
+if(R1 == 4)then
+	alias ox R2;
+	alias ix R3;
+	ix = [OPEN_FILE_TABLE + ox*4];
+	[OPEN_FILE_TABLE + ox*4 + 1] = [OPEN_FILE_TABLE + ox*4 + 1] - 1;
+	if([OPEN_FILE_TABLE + ox*4 + 1] == 0)then
+		if([OPEN_FILE_TABLE + ox*4] != INODE_ROOT)then
+			[FILE_STATUS_TABLE + ix*4 + 1] = [FILE_STATUS_TABLE + ix*4 + 1] - 1;
+			if([FILE_STATUS_TABLE + ix*4 + 1] == 0)then
+				[FILE_STATUS_TABLE + ix*4 + 1] = -1;
+			endif;
+		endif;
+		[OPEN_FILE_TABLE + ox*4] = -1;
+		[OPEN_FILE_TABLE + ox*4 + 1] = 0;
+	endif;
+	return;
+else
+if(R1 == 2)then
+	alias block R2;
+	alias offset R3;
+	alias addr R4;
+	multipush(R2,R3,R4);
+	R1 = 1;
+	R2 = block%MAX_BUFFER;
+	R3 = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_0;
+	multipop(R2,R3,R4);
+	if([BUFFER_TABLE + (block%MAX_BUFFER)*4] != block)then
+		if([BUFFER_TABLE + (block%MAX_BUFFER)*4 + 1] == 1)then
+			multipush(R2,R3,R4);
+			R1 = 1;
+			R3 = block%MAX_BUFFER + 71;
+			R4 = [BUFFER_TABLE + (block%MAX_BUFFER)*4];
+			R2 = [SYSTEM_STATUS_TABLE + 1];
+			call MOD_4;
+			multipop(R2,R3,R4);
+		endif;
+		multipush(R2,R3,R4);
+		R1 = 2;
+		R3 = block%MAX_BUFFER + 71;
+		R4 = block;
+		R2 = [SYSTEM_STATUS_TABLE + 1];
+		call MOD_4;
+		multipop(R2,R3,R4);
+		[BUFFER_TABLE + (block%MAX_BUFFER)*4] = block;
+		[BUFFER_TABLE + (block%MAX_BUFFER)*4 + 1] = 0;
+	endif;
+	[[PTBR + 2*(addr/512)]*512 + addr%512] = [(block%MAX_BUFFER + 71)*512 + offset];
+	multipush(R2,R3,R4);
+	R1 = 2;
+	R2 = block%MAX_BUFFER;
+	R3 = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_0;
+	multipop(R2,R3,R4);
+	return;
+else
+if(R1 == 1)then
+	alias block R2;
+	alias offset R3;
+	alias word R4;
+	multipush(R2,R3,R4);
+	R1 = 1;
+	R2 = block%MAX_BUFFER;
+	R3 = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_0;
+	multipop(R2,R3,R4);
+	if([BUFFER_TABLE + (block%MAX_BUFFER)*4] != block)then
+		if([BUFFER_TABLE + (block%MAX_BUFFER)*4 + 1] == 1)then
+			multipush(R2,R3,R4);
+			R1 = 1;
+			R3 = block%MAX_BUFFER + 71;
+			R4 = [BUFFER_TABLE + (block%MAX_BUFFER)*4];
+			R2 = [SYSTEM_STATUS_TABLE + 1];
+			call MOD_4;
+			multipop(R2,R3,R4);
+		endif;
+		multipush(R2,R3,R4);
+		R1 = 2;
+		R3 = block%MAX_BUFFER + 71;
+		R4 = block;
+		R2 = [SYSTEM_STATUS_TABLE + 1];
+		call MOD_4;
+		multipop(R2,R3,R4);
+		[BUFFER_TABLE + (block%MAX_BUFFER)*4] = block;
+	endif;
+	[(block%MAX_BUFFER + 71)*512 + offset] = word;
+	[BUFFER_TABLE + (block%MAX_BUFFER)*4 + 1] = 1;
+	multipush(R2,R3,R4);
+	R1 = 2;
+	R2 = block%MAX_BUFFER;
+	R3 = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_0;
+	multipop(R2,R3,R4);
+	return;
+endif;
+endif;
+endif;
+endif;

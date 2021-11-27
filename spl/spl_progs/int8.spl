@@ -1,0 +1,122 @@
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 8;
+alias userSP R0;
+userSP = SP;
+[PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13] = SP;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +11]*512 - 1; 
+multipush(R0,R1);
+R1 = 1;
+call MOD_1;
+multipop(R1);
+if(R0 == -1)then
+	multipop(R0);
+	alias physicalAddrRetVal R5;
+	physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+	[physicalAddrRetVal] = -1;
+else
+	alias newpid R2;
+	newpid = R0;
+	multipop(R0);
+	alias new_proc R7;
+	new_proc = PROCESS_TABLE + newpid*16;
+	[new_proc + 1] = newpid;
+	[new_proc + 2] = [SYSTEM_STATUS_TABLE + 1];
+	if([PTBR + 4] == -1)then
+		multipush(R0, R1, R2);
+		R1 = 1;
+		call MOD_2;
+		[PTBR + 4] = R0; 
+		[PTBR + 5] = "0110"; 
+		R1 = 1;
+		call MOD_2;
+		[PTBR + 6] = R0; 
+		[PTBR + 7] = "0110"; 
+		multipop(R0, R1, R2);
+	endif;
+	alias pid R4;
+
+//SAVE DISK_ACCESS_NO, MAX_MEM USAGE, CONTEXT SWITCHES
+if(pid == 1)then
+	[75*512] = 0;
+	[75*512 + 1] = 0;
+	[75*512 + 2] = 0;
+endif;
+
+	pid = [SYSTEM_STATUS_TABLE + 1];
+	alias proc R8;
+	proc = PROCESS_TABLE + pid*16;
+	[new_proc + 3] = [proc + 3]; 
+	[new_proc + 6] = [proc + 6]; 
+	[new_proc + 10] = [proc + 10]; 
+	[new_proc + 7] = [proc + 7]; 
+	[new_proc + 13] = [proc + 13]; 
+	[new_proc + 9] = 0;
+	[new_proc + 12] = 0;
+	[new_proc + 0] = 0;
+	multipush(R0, R1, R2, R4, R7, R8);
+	R1 = 1;
+	call MOD_2;
+	multipop(R1, R2, R4, R7, R8);
+	[PROCESS_TABLE + newpid*16 + 11] = R0;
+	multipop(R0);
+	alias ent R3;
+	ent = 0;
+	while(ent < 8)do
+		[([new_proc + 11])*512 + 496 + ent*2] = [([proc + 11])*512 + 496 + ent*2];  
+		[([new_proc + 11])*512 + 496 + ent*2 + 1] = [([proc + 11])*512 + 496 + ent*2 + 1];
+		multipush(R3);
+		if([([proc + 11])*512 + 496 + ent*2] == SEMAPHORE)then
+			ent = [([proc + 11])*512 + 496 + ent*2 + 1]; 
+			[SEMAPHORE_TABLE + ent*4 + 1] = [SEMAPHORE_TABLE + ent*4 + 1] + 1;
+		else
+		if([([proc + 11])*512 + 496 + ent*2] == FILE)then
+			ent = [([proc + 11])*512 + 496 + ent*2 + 1]; 
+			[OPEN_FILE_TABLE + ent*4 + 1] = [OPEN_FILE_TABLE + ent*4 + 1] + 1;
+		endif;
+		endif;
+		multipop(R3);
+		ent = ent + 1;
+	endwhile;
+breakpoint;
+	ent = 0;
+	while(ent < 10)do
+		[DISK_MAP_TABLE + [PROCESS_TABLE + newpid*16 + 1]*10 + ent] = [DISK_MAP_TABLE + [PROCESS_TABLE + pid*16 + 1]*10 + ent];
+		ent = ent + 1;
+	endwhile;
+	alias nwptbr R5;
+	nwptbr = [PROCESS_TABLE + newpid*16 + 14];
+	ent = 0;
+	while(ent < 8)do
+		[nwptbr + ent*2] = [PTBR + ent*2];
+		[nwptbr + ent*2 + 1] = [PTBR + ent*2 + 1];
+		[MEMORY_FREE_LIST + [PTBR + ent*2]] = [MEMORY_FREE_LIST + [PTBR + ent*2]] + 1; 
+		ent = ent + 1;
+	endwhile;
+	ent = 0;
+	multipush(R0);
+	while(ent < 2)do
+		multipush(R1, R2, R3, R4, R5);
+		R1 = 1;
+		call MOD_2;
+		multipop(R1, R2, R3, R4, R5);
+		[nwptbr + 16 + ent*2] = R0;
+		[nwptbr + 17 + ent*2] = "0110";
+		ent = ent + 1;
+	endwhile;
+	multipop(R0);
+	[PROCESS_TABLE + newpid*16 + 4] = CREATED;
+	ent = 0;
+	while(ent < 512)do
+		[[nwptbr + 16]*512 + ent] = [[PTBR + 16]*512 + ent];
+		[[nwptbr + 18]*512 + ent] = [[PTBR + 18]*512 + ent];
+		ent = ent + 1;
+	endwhile;
+	[[PROCESS_TABLE + newpid*16 + 11]*512] = BP;
+	alias physicalAddrRetVal R6;
+	physicalAddrRetVal = ([PTBR + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+	[physicalAddrRetVal] = newpid;
+	physicalAddrRetVal = ([nwptbr + 2 * ((userSP - 1) / 512)] * 512) + ((userSP - 1) % 512);
+	[physicalAddrRetVal] = 0;
+endif;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13];
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+ireturn;

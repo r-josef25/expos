@@ -1,0 +1,106 @@
+if(R1 == 2) then
+	alias pg R2;
+	alias l_e R3;
+	l_e = MEMORY_FREE_LIST + pg;
+	[l_e] = [l_e] - 1;
+	if( [l_e] == 0)then
+		[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] + 1;
+		alias pid R1;
+		pid = 0;
+		while(pid < 16)do
+			if( [PROCESS_TABLE + (pid*16) + 4] == WAIT_MEM )then
+				[PROCESS_TABLE + (pid*16) + 4] = READY;
+			endif;
+			pid = pid + 1;
+		endwhile;
+	endif;
+	return;
+else
+if(R1 == 1)then
+	[SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1;
+	while([SYSTEM_STATUS_TABLE + 2] == 0)do
+		[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 4] = WAIT_MEM;
+		call MOD_5;
+	endwhile;
+	[SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] - 1;
+	[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+	R0 = -1;
+	alias no R1;
+	no = 0;
+	while(no < MAX_MEM_PAGE)do
+		if([MEMORY_FREE_LIST + no] == 0)then
+			R0 = no;
+			[MEMORY_FREE_LIST + no] = 1;
+if((128 - [SYSTEM_STATUS_TABLE + 2]) > [75*512 + 1])then
+[75*512 + 1] = 128 - [SYSTEM_STATUS_TABLE + 2];
+endif;
+			break;
+		endif;
+		no = no + 1;
+	endwhile;
+	return;
+else
+if(R1 == 4)then
+	[DISK_FREE_LIST + R2] = [DISK_FREE_LIST + R2] - 1;
+	return;
+else
+if(R1 == 3)then
+	alias ix R2;
+	ix = DISK_FREE_AREA;
+	while(ix < DISK_SWAP_AREA)do
+		if([DISK_FREE_LIST + ix] == 0)then
+			[DISK_FREE_LIST + ix] = 1;
+			break;
+		endif;
+		ix = ix + 1;
+	endwhile;
+	if(ix == DISK_SWAP_AREA)then
+		R0 = -1;
+		return;
+	endif;
+	R0 = ix;
+	return;
+else
+if(R1 == 5)then
+	alias pid R1;
+	pid = 0;
+	alias pg R4;
+	pg = -1;
+	alias ent R5;
+	ent = 0;
+	while(pid < 16)do
+		ent = 2;
+		while(ent < 10)do
+			if([DISK_MAP_TABLE + pid*10 + ent] == R2 && [PAGE_TABLE_BASE + pid*20 + ent*2] != -1)then
+				pg = [PAGE_TABLE_BASE + pid*20 + ent*2];
+				break;
+			endif;
+			ent = ent + 1;
+		endwhile;
+		if(pg != -1)then
+			break;
+		endif;
+		pid = pid + 1;
+	endwhile;
+	if(pg != -1)then
+		[MEMORY_FREE_LIST + pg] = [MEMORY_FREE_LIST + pg] + 1; 
+		R0 = pg;
+		return;
+	endif;
+	R1 = 1;
+	multipush(R2);
+	call MOD_2;
+	multipop(R2);
+	multipush(R0);
+	R1 = 2;
+	R4 = R2;
+	R3 = R0;
+	R2 = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_4;
+	multipop(R0);
+	return;
+endif;
+endif;
+endif;
+endif;
+endif;
