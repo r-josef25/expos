@@ -1,11 +1,9 @@
 xfs-interface
 run.sh
 disk.xfs
-*.dat
 *~
 *.o
 *.xsm
-*.txt
 *.tmp
 *.dSYM
 *.vscode/

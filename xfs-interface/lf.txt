@@ -1,0 +1,3 @@
+run ./dl.txt
+run ../spl/spl_progs/dl.txt
+exit
