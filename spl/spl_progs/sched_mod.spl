@@ -1,0 +1,46 @@
+[75*512] = [75*512] + 1;
+alias cur_pid R0;
+multipush(BP);
+cur_pid = [SYSTEM_STATUS_TABLE + 1];
+alias proc_te R2;
+proc_te = cur_pid * 16 + PROCESS_TABLE;
+[proc_te + 12] = SP % 512;
+[proc_te + 14] = PTBR;
+[proc_te + 15] = PTLR;
+alias nex_pid R1;
+nex_pid = (cur_pid)%15 + 1;
+while([(nex_pid * 16 + PROCESS_TABLE) + 4] != READY && [(nex_pid * 16 + PROCESS_TABLE) + 4] != CREATED)do
+	nex_pid = (nex_pid)%15 + 1;
+	if (nex_pid == cur_pid || (nex_pid == 1 && cur_pid == 0)) then 
+		nex_pid = 0;
+		break;
+	endif;
+endwhile;
+
+//PRINT MEM_USAGE, DISK ACCESS, CONTEXT_SWITCH
+if(nex_pid == 1 && nex_pid != cur_pid && cur_pid != 0 && [75*512 + 4] == 1)then
+	print "Context Switches";
+	print [75*512];
+	print "Memory Usage";
+	print [75*512 + 1];
+	print "Disk Access";
+	print [75*512 + 2];
+	[75*512 + 4] = 0;
+endif;
+
+cur_pid = nex_pid;
+proc_te = cur_pid * 16 + PROCESS_TABLE;
+PTLR = [proc_te + 15];
+PTBR = [proc_te + 14];
+[SYSTEM_STATUS_TABLE + 1] = cur_pid;
+if([proc_te + 4] == CREATED) then
+	[proc_te + 4] = RUNNING;
+	[proc_te + 9] = 0;
+	BP = [[proc_te + 11]*512];
+	SP = [proc_te + 13];
+	ireturn;
+endif;
+[proc_te + 4] = RUNNING;
+SP = [proc_te + 12] + [proc_te + 11] * 512;
+multipop(BP);
+return;

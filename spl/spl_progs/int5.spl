@@ -1,0 +1,111 @@
+alias userSP R0;
+userSP = SP;
+[PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13] = SP;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +11]*512 - 1; 
+alias sys R1;
+sys = [[PTBR + ((userSP - 5)/512)*2]*512 + (userSP-5)%512];
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = sys;
+alias ret R5;
+ret = [PTBR + ((userSP - 1)/512)*2]*512 + (userSP-1)%512;
+if(sys == 2)then
+	alias pid R2 ;
+	pid = [SYSTEM_STATUS_TABLE + 1];
+	alias f_name R6;
+	f_name = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+	alias uap R3;
+	uap = [PROCESS_TABLE + pid*16 + 11];
+	alias ix R4;
+	ix = 0;
+	while(ix < 8)do
+		if([(uap)*512 +496 + ix*2] == -1)then
+			break;
+		endif;
+		ix = ix + 1;
+	endwhile;
+	if(ix == 8)then
+		[ret] = -3;
+	else
+		multipush(R0,R1,R2,R3,R4,R5,R6);
+		R1 = 3;
+		R2 = f_name;
+		call MOD_3;
+		multipop(R1,R2,R3,R4,R5,R6);
+		if(R0 < 0)then 
+			[ret] = R0;
+		else
+			[(uap + 1)*512 -16 + ix*2] = FILE;
+			[(uap + 1)*512 -16 + ix*2 + 1] = R0;
+			[ret] = ix;
+		endif;
+		multipop(R0);
+	endif;
+else
+if(sys == 3)then
+	alias pid R2;
+	pid = [SYSTEM_STATUS_TABLE + 1];
+	alias uap R3;
+	uap = [PROCESS_TABLE + pid*16 + 11];
+	alias ix R4;
+	ix = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+	if([(uap + 1)*512 -16 + ix*2] != FILE || ix < 0 || ix > 7)then
+		[ret] = -1;
+	else
+		multipush(R0,R1,R2,R3,R4,R5);
+		R1 = 4;
+		R2 = [(uap + 1)*512 -16 + ix*2 + 1];
+		call MOD_3;
+		multipop(R0,R1,R2,R3,R4,R5);
+		[(uap + 1)*512 -16 + ix*2] = -1;
+		[ret] = 0;
+	endif;
+else
+if(sys == 6)then
+	alias fd  R2;
+	fd = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+	alias offset R3;
+	offset = [[PTBR + ((userSP - 3)/512)*2]*512 + (userSP-3)%512];
+	alias uap R4;
+	uap = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11];
+	if(fd > 7 || fd < 0 || [uap*512 + 496 + fd*2] != FILE)then
+		[ret] = -1;
+	else
+		alias ix R7; 
+		alias ox R6;
+		ox = [uap*512 + 496 + fd*2 + 1];
+		ix = [OPEN_FILE_TABLE + ox*4];
+		multipush(R0,R1,R2,R3,R4,R5,R6,R7);
+		R1 = 4;
+		R2 = ix;
+		R3 = [SYSTEM_STATUS_TABLE + 1];
+		call MOD_0;
+		multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+		if([OPEN_FILE_TABLE + ox*4 + 2] + offset < 0)then
+			[ret] = -2;
+		else
+			if(offset == 0)then
+				[OPEN_FILE_TABLE + ox*4 + 2] = 0;
+				[ret] = 0;
+			else
+				if([OPEN_FILE_TABLE + ox*4 + 2] + offset >= [INODE_TABLE + ix*16 + 2])then
+
+					[OPEN_FILE_TABLE + ox*4 + 2] = [INODE_TABLE + ix*16 + 2];
+					[ret] = 0;
+				else
+					[OPEN_FILE_TABLE + ox*4 + 2] = [OPEN_FILE_TABLE + ox*4 + 2] + offset;
+					[ret] = 0;
+				endif;
+			endif;
+		endif;
+		multipush(R0,R1,R2,R3,R4,R5,R6,R7);
+		R1 = 5;
+		R2 = ix;
+		R3 = [SYSTEM_STATUS_TABLE + 1];
+		call MOD_0;
+		multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+	endif;
+endif;
+endif;
+endif;
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13];
+ireturn;

@@ -1,0 +1,58 @@
+alias userSP R0;
+userSP = SP;
+[PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13] = SP;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +11]*512 - 1; 
+alias sys R1;
+sys = [[PTBR + ((userSP - 5)/512)*2]*512 + (userSP-5)%512];
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = sys;
+alias ret R5;
+ret = [PTBR + ((userSP - 1)/512)*2]*512 + (userSP-1)%512;
+alias pid R3;
+pid = [SYSTEM_STATUS_TABLE + 1];
+if(sys == 19)then
+	alias semid R2;
+	semid  = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+	if(semid > 7 || semid < 0 || [([PROCESS_TABLE + pid*16 + 11]+1)*512 -16 + semid*2] != SEMAPHORE)then
+		[ret] = -1;
+	else
+		alias id R4;
+		id = [([PROCESS_TABLE + pid*16 + 11] + 1)*512 -16 + semid*2 + 1];
+		while([SEMAPHORE_TABLE + id*4] != -1)do
+			[PROCESS_TABLE + pid*16 + 4] = WAIT_SEMAPHORE;
+			[PROCESS_TABLE + pid*16 + 5] = id;
+			multipush(R0,R1,R2,R3,R4,R5);
+			call MOD_5;
+			multipop(R0,R1,R2,R3,R4,R5);
+		endwhile;
+		[SEMAPHORE_TABLE + id*4] = pid;
+		[ret] = 0;
+	endif;
+else
+if(sys == 20)then
+	alias semid R2;
+	semid  = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+	if(semid > 7 || semid < 0 || [([PROCESS_TABLE + pid*16 + 11]+1)*512 -16 + semid*2] != SEMAPHORE)then
+		[ret] = -1;
+	else
+		alias id R4;
+		id = [([PROCESS_TABLE + pid*16 + 11] + 1)*512 -16 + semid*2 + 1];
+		if([SEMAPHORE_TABLE + id*4] != pid)then
+			[ret] = -2;
+		else
+			[SEMAPHORE_TABLE + id*4] = -1;
+			alias ix R6;
+			ix = 0;
+			while(ix < MAX_PROC_NUM)do
+				if([PROCESS_TABLE + ix*16 + 4] == WAIT_SEMAPHORE && [PROCESS_TABLE + ix*16 + 5] == id)then
+					[PROCESS_TABLE + ix*16 + 4] = READY;
+				endif;
+				ix = ix + 1;
+			endwhile;
+			[ret] = 0;
+		endif;
+	endif;
+endif;
+endif;
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13];
+ireturn;

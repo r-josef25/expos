@@ -1,0 +1,45 @@
+alias userSP R0;
+userSP = SP;
+[PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13] = SP;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +11]*512 - 1; 
+alias sys R1;
+sys = [[PTBR + ((userSP - 5)/512)*2]*512 + (userSP-5)%512];
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = sys;
+alias ret R5;
+ret = [PTBR + ((userSP - 1)/512)*2]*512 + (userSP-1)%512;
+
+if([SYSTEM_STATUS_TABLE + 1] != 1)then
+	[ret] = -2;
+else
+	alias usr R2;
+	alias pass_en R3;
+	usr = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+	pass_en =[[PTBR + ((userSP - 3)/512)*2]*512 + (userSP-3)%512];
+	encrypt pass_en;
+
+	alias ux R4;
+	while(ux < MAX_USER_NUM)do
+		if([USER_TABLE + ux*2] == usr && [USER_TABLE + ux*2 + 1] == pass_en)then
+			break;
+		endif;
+		ux = ux + 1;
+	endwhile;
+
+	if(ux == MAX_USER_NUM)then
+		[ret] = -1;
+	else
+		[PROCESS_TABLE + 2*16 + 4] = CREATED;
+		[PROCESS_TABLE + 2*16 + 2] = [SYSTEM_STATUS_TABLE + 1];
+		[PROCESS_TABLE + 2*16 + 3] = ux;
+		[SYSTEM_STATUS_TABLE] = ux;
+
+		[PROCESS_TABLE + 16 + 4] = WAIT_PROCESS;
+		[PROCESS_TABLE + 16 + 5] = 2;
+		[ret] = 0;
+		call MOD_5;
+	endif;
+endif;
+
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13];
+ireturn;

@@ -1,0 +1,150 @@
+alias userSP R0;
+userSP = SP;
+[PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13] = SP;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +11]*512 - 1; 
+alias sys R1;
+sys = [[PTBR + ((userSP - 5)/512)*2]*512 + (userSP-5)%512];
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = sys;
+alias ret R5;
+ret = [PTBR + ((userSP - 1)/512)*2]*512 + (userSP-1)%512;
+
+if(sys == 22)then
+	if([SYSTEM_STATUS_TABLE + 1] != 2 || [SYSTEM_STATUS_TABLE] != 1)then
+		[ret] = -2;
+	else
+		alias usr R2;
+		alias pass_en R3;
+		usr = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+		pass_en =[[PTBR + ((userSP - 3)/512)*2]*512 + (userSP-3)%512];
+		encrypt pass_en;
+
+		alias ux R4;
+		ux = 0;
+		while(ux < MAX_USER_NUM)do
+			if([USER_TABLE + ux*2] == -1)then
+				break;
+			endif;
+			ux = ux + 1;
+		endwhile;
+
+		if(ux == MAX_USER_NUM)then
+			[ret] = -1;
+		else
+			[USER_TABLE + ux*2] = usr;
+			[USER_TABLE + ux*2 + 1] = pass_en;
+			[ret] = 0;
+		endif;
+	endif;
+else
+if(sys == 23)then
+	if([SYSTEM_STATUS_TABLE + 1] != 2 || [SYSTEM_STATUS_TABLE] != 1)then
+		[ret] = -2;
+	else
+		alias usr R2;
+			usr = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+		if(usr == "kernel" || usr == "root")then
+			[ret] = -2;
+		else
+
+			alias ux R4;
+			ux = 0;
+			while(ux < MAX_USER_NUM)do
+				if([USER_TABLE + ux*2] == usr)then
+					break;
+				endif;
+				ux = ux + 1;
+			endwhile;
+
+			if(ux == MAX_USER_NUM)then
+				[ret] = -1;
+			else
+				alias rx R6;
+				rx = 0;
+				while(rx < MAX_FILE_NUM)do
+					if([ROOT_FILE + rx*8 + 3] == usr)then
+						break;
+					endif;
+					rx = rx + 1;
+				endwhile;
+				if(rx != MAX_FILE_NUM)then
+					[ret] = -3;
+				else
+					[USER_TABLE + ux*2] = -1;
+					[USER_TABLE + ux*2 + 1] = -1;
+					[ret] = 0;
+				endif;
+			endif;
+		endif;
+	endif;
+else
+if(sys == 24)then
+	if([SYSTEM_STATUS_TABLE + 1] != 2)then
+		[ret] = -1;
+	else
+		alias usr R2;
+		alias pass_en R3;
+		usr = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+		pass_en =[[PTBR + ((userSP - 3)/512)*2]*512 + (userSP-3)%512];
+		encrypt pass_en;
+
+		alias ux R4;
+		ux = 0;
+		while(ux < MAX_USER_NUM)do
+			if([USER_TABLE + ux*2] == usr)then
+				break;
+			endif;
+			ux = ux + 1;
+		endwhile;
+
+		if(ux == MAX_USER_NUM)then
+			[ret] = -2;
+		else
+			if(usr != "root" && [SYSTEM_STATUS_TABLE] != ux)then
+				[ret] = -1;
+			else
+				[USER_TABLE + ux*2 + 1] = pass_en;
+				[ret] = 0;
+			endif;
+		endif;
+	endif;
+else
+if(sys == 25)then
+	alias usrid R2;
+	usrid = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+	if(usrid < 0 || usrid > MAX_USER_NUM - 1)then
+		[ret] = -1;
+	else
+		alias ux R4;
+		ux = 0;
+		if([USER_TABLE + usrid*2] == -1)then
+			[ret] = -1;
+		else
+			[ret] = [USER_TABLE + usrid*2];
+		endif;
+	endif;
+else
+if(sys == 26)then
+	alias usr R2;
+	usr = [[PTBR + ((userSP - 4)/512)*2]*512 + (userSP-4)%512];
+	alias ux R4;
+	ux = 0;
+	while(ux < MAX_USER_NUM)do
+		if([USER_TABLE + ux*2] == usr)then
+			break;
+		endif;
+		ux = ux + 1;
+	endwhile;
+	if(ux == MAX_USER_NUM)then
+		[ret] = -1;
+	else
+		[ret] = ux;
+	endif;
+endif;
+endif;
+endif;
+endif;
+endif;
+
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+SP = [PROCESS_TABLE +([SYSTEM_STATUS_TABLE + 1]*16) +13];
+ireturn;
