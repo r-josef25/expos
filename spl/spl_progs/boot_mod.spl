@@ -57,6 +57,8 @@ loadi(34,47);
 loadi(35,48);
 loadi(36,49);
 loadi(37,50);
+loadi(52,65);
+loadi(53,66);
 PTBR = PAGE_TABLE_BASE + 20;
 PTLR = 10;
 [PTBR+0] = 63;
@@ -127,19 +129,24 @@ while(ri < 16)do
 endwhile;
 
 alias pid R1;
-pid = 2;
+pid = 0;
 while(pid < 16) do
-	[PROCESS_TABLE + 16*pid + 4] = TERMINATED;
+	[PROCESS_TABLE + 16*pid] = 0;
+	if(pid > 2 && pid < 15)then
+	    [PROCESS_TABLE + 16*pid + 4] = TERMINATED;
+	endif;
 	pid = pid + 1;
 endwhile;
 [TERMINAL_STATUS_TABLE] = 0;
 [DISK_STATUS_TABLE] = 0;
 [SYSTEM_STATUS_TABLE + 3] = 0;
-[SYSTEM_STATUS_TABLE + 2] = 47;
+[SYSTEM_STATUS_TABLE + 2] = 45;
+[SYSTEM_STATUS_TABLE + 4] = 0;
+[SYSTEM_STATUS_TABLE + 5] = 0;
 alias m_e R2;
 m_e = 0;
 while(m_e < 128)do
-	if(m_e < 81)then
+	if(m_e < 83)then
 		[MEMORY_FREE_LIST + m_e] = 1;
 	else
 		[MEMORY_FREE_LIST + m_e] = 0;
@@ -186,7 +193,6 @@ while(ot < MAX_OPENFILE_NUM)do
 endwhile;
 [DISK_MAP_TABLE + pid*10 + 4] = 7; 
 [DISK_MAP_TABLE + pid*10 + 5] = 8; 
-
 //SET USAGE INTO NOT PRINT ON STARTUP
 [75*512 + 4] = 0;
 

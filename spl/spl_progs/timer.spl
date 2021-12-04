@@ -2,6 +2,37 @@
 SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
 backup;
 [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 4] = READY;
+if([SYSTEM_STATUS_TABLE + 5] != 0 )then
+    if([SYSTEM_STATUS_TABLE + 1] == 15 && [SYSTEM_STATUS_TABLE + 5] == SWAP_OUT)then
+	R1 = 1;
+	call MOD_6;
+    else
+    if([SYSTEM_STATUS_TABLE + 1] == 15 && [SYSTEM_STATUS_TABLE + 5] == SWAP_IN)then
+	R1 = 2;
+	call MOD_6;
+    endif;
+    endif;
+else
+if([SYSTEM_STATUS_TABLE + 2] < MEM_LOW)then
+    [SYSTEM_STATUS_TABLE + 5] = SWAP_OUT;
+else
+if([SYSTEM_STATUS_TABLE + 4] != 0)then
+    if([SYSTEM_STATUS_TABLE + 2] > MEM_HIGH)then
+	[SYSTEM_STATUS_TABLE + 5] = SWAP_IN; 
+    else
+	alias ix R3;
+	ix = 3;
+	while(ix < 15)do
+	    if([PROCESS_TABLE + ix*16 + 6] == 1 && [PROCESS_TABLE + ix*16] > MAX_TICK)then
+		[SYSTEM_STATUS_TABLE + 5] = SWAP_IN; 
+		break;
+	    endif;
+	    ix = ix + 1;
+	endwhile;
+    endif;
+endif;
+endif;
+endif;
 alias pid R0;
 pid = 0;
 while( pid < 16 )do

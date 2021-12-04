@@ -8,15 +8,22 @@ proc_te = cur_pid * 16 + PROCESS_TABLE;
 [proc_te + 14] = PTBR;
 [proc_te + 15] = PTLR;
 alias nex_pid R1;
-nex_pid = (cur_pid)%15 + 1;
-while([(nex_pid * 16 + PROCESS_TABLE) + 4] != READY && [(nex_pid * 16 + PROCESS_TABLE) + 4] != CREATED)do
-	nex_pid = (nex_pid)%15 + 1;
-	if (nex_pid == cur_pid || (nex_pid == 1 && cur_pid == 0)) then 
-		nex_pid = 0;
-		break;
-	endif;
-endwhile;
-
+if([SYSTEM_STATUS_TABLE + 5] != 0)then
+    if([PROCESS_TABLE + 15*16 + 4] == READY || [PROCESS_TABLE + 15*16 + 4] == CREATED)then
+	nex_pid = 15;
+    else
+	nex_pid = 0;
+    endif;
+else
+    nex_pid = (cur_pid)%15 + 1;
+    while([(nex_pid * 16 + PROCESS_TABLE) + 4] != READY && [(nex_pid * 16 + PROCESS_TABLE) + 4] != CREATED)do
+	    nex_pid = (nex_pid)%15 + 1;
+	    if (nex_pid == cur_pid || (nex_pid == 1 && cur_pid == 0)) then 
+		    nex_pid = 0;
+		    break;
+	    endif;
+    endwhile;
+endif;
 //PRINT MEM_USAGE, DISK ACCESS, CONTEXT_SWITCH
 if(nex_pid == 1 && nex_pid != cur_pid && cur_pid != 0 && [75*512 + 4] == 1)then
 	print "Context Switches";

@@ -99,6 +99,19 @@ if(R1 == 5)then
 	call MOD_4;
 	multipop(R0);
 	return;
+else
+if(R1 == 6)then
+	R2 = DISK_SWAP_AREA;
+	R0 = -1;
+	while (R2 < DISK_SIZE)do
+	    if([DISK_FREE_LIST + R2] == 0)then
+		R0 = R2;
+		break;
+	    endif;
+	    R2 = R2 + 1;
+	endwhile;
+	return;
+endif;
 endif;
 endif;
 endif;

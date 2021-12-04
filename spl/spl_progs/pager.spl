@@ -1,0 +1,139 @@
+if(R1 == 1)then
+    alias pid R2; 
+    pid = 3;
+    while (pid < 15)do
+	if([PROCESS_TABLE + pid*16 + 4] == WAIT_PROCESS)then
+	    break;
+	endif;
+	pid = pid + 1;
+    endwhile;
+    if(pid == 15)then
+	pid = 3;
+	while (pid < 15)do
+	    if([PROCESS_TABLE + pid*16 + 4] == WAIT_SEMAPHORE)then
+		break;
+	    endif;
+	    pid = pid + 1;
+	endwhile;
+    endif;
+    if(pid == 15)then
+	alias p R1;
+	p = 4;
+	pid = -1;
+	while(p < 15)do
+	if([PROCESS_TABLE + pid*16 + 4] != RUNNING && [PROCESS_TABLE + pid*16 + 4] != TERMINATED && [PROCESS_TABLE + pid*16 + 4] != ALLOCATED && [PROCESS_TABLE + pid*16 + 6] != 1)then
+	    if(pid == -1 || [PROCESS_TABLE + p*16] > [PROCESS_TABLE + pid*16])then
+		pid = p;
+	    endif;
+	    p = p + 1;
+	    endif;
+	endwhile;
+    endif;
+    if(pid == -1)then
+	[SYSTEM_STATUS_TABLE + 5] = 0;
+	return;
+    endif;
+    [PROCESS_TABLE + pid*16] = 0;
+
+    alias ix R3;
+    ix = 4;
+    while(ix < 8)do
+	if([PAGE_TABLE_BASE + pid*20 + ix*2 + 1] != "0000")then
+	    multipush(R2,R3);
+	    R1 = 2;
+	    R2 = [PAGE_TABLE_BASE + pid*20 + ix*2];
+	    call MOD_2;
+	    multipop(R2,R3);
+	    [PAGE_TABLE_BASE + pid*20 + ix*2] = -1;
+	    [PAGE_TABLE_BASE + pid*20 + ix*2 + 1] = "0000";
+	endif;
+	ix = ix + 1;
+    endwhile;
+
+    ix = 2;
+    while(ix < 10)do
+	if([PAGE_TABLE_BASE + pid*20 + ix*2 + 1] != "0000")then
+	    if(ix > 3 || [MEMORY_FREE_LIST + [PAGE_TABLE_BASE + pid*20 + ix*2]] <= 1)then
+		multipush(R2,R3);
+		R1 = 6;
+		call MOD_2;
+		multipop(R2,R3);
+		[DISK_MAP_TABLE + pid*10 + ix] = R0;
+		multipush(R0,R2,R3);
+		R1 = 1;
+		R3 = [PAGE_TABLE_BASE + pid*16 + ix*2];
+		R4 = R0;
+		call MOD_4;
+		multipop(R0,R2,R3);
+		multipush(R2,R3);
+		R1 = 2;
+		R2 = [PAGE_TABLE_BASE + pid*20 + ix*2];
+		call MOD_2;
+		multipop(R2,R3);
+		[PAGE_TABLE_BASE + pid*20 + ix*2] = -1;
+		[PAGE_TABLE_BASE + pid*20 + ix*2 + 1] = "0000";
+	    endif;
+	endif;
+	ix = ix + 1;
+    endwhile;
+    [PROCESS_TABLE + pid*16 + 6] = 1;
+    [SYSTEM_STATUS_TABLE + 4] = [SYSTEM_STATUS_TABLE + 4] + 1;
+    [SYSTEM_STATUS_TABLE + 5] = 0;
+    return;
+else
+if(R1 == 2)then
+    alias pid R2;
+    pid = -1;
+    alias p R1;
+    while(p < 15)do
+	if([PROCESS_TABLE + p*16 + 4] == READY && [PROCESS_TABLE + p*16 + 6] == 1)then
+		    if(pid == -1 || [PROCESS_TABLE + p*16] > [PROCESS_TABLE + pid*16])then
+		    pid = p;
+		    endif;
+	endif;
+	p = p + 1;
+    endwhile;
+    if(pid == -1)then
+	[SYSTEM_STATUS_TABLE + 5] = 0;
+	return;
+    endif;
+    [PROCESS_TABLE + pid*16] = 0;
+
+    alias ix R3;
+    ix = 2;
+    while(ix < 10)do
+	if(ix > 3 || [DISK_MAP_TABLE + pid*16 + ix] != -1)then
+	    multipush(R2,R3);
+	    R1 = 1;
+	    call MOD_2;
+	    multipop(R2,R3);
+	    multipush(R0,R2,R3);
+	    R1 = 2;
+	    R4 = [DISK_MAP_TABLE + pid*10 + ix];
+	    R3 = R0;
+	    call MOD_4;
+	    multipop(R0,R2,R3);
+	    multipush(R0,R2,R3);
+	    R1 = pid;
+	    R2 = [DISK_MAP_TABLE + pid*10 + ix];
+	    R3 = R1;
+	    R1 = 4;
+	    call MOD_2;
+	    multipop(R0,R2,R3);
+	    [DISK_MAP_TABLE + pid*10 + ix] = -1;
+	    [PAGE_TABLE_BASE + pid*20 + ix*2] = R0;
+	    [PAGE_TABLE_BASE + pid*20 + ix*2 + 1] = "0110";
+	endif;
+	ix = ix + 1;
+	if (ix == 4)then
+	    ix = 8;
+	endif;
+    endwhile;
+    [PAGE_TABLE_BASE + pid*20 + 17] = "1110";
+    [PAGE_TABLE_BASE + pid*20 + 19] = "1110";
+    [PROCESS_TABLE + pid*16 + 6] = 1;
+    [SYSTEM_STATUS_TABLE + 4] = [SYSTEM_STATUS_TABLE + 4] + 1;
+    [SYSTEM_STATUS_TABLE + 5] = 0;
+    return;
+endif;
+endif;
