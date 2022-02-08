@@ -81,13 +81,15 @@ PTLR = 10;
 [PTBR+17] = "0110";
 [PTBR+18] = -1;
 [PTBR+19] = "0000";
-[PROCESS_TABLE + 16 + 11] = 77;
-[PROCESS_TABLE + 16 + 4] = CREATED;
-[PROCESS_TABLE + 16 + 1] = 1;
-[PROCESS_TABLE + 16 + 12] = 0;
-[PROCESS_TABLE + 16 + 13] = 8*512;
-[PROCESS_TABLE + 16 + 14] = PAGE_TABLE_BASE + 20;
-[PROCESS_TABLE + 16 + 15] = 10;
+
+R0 = PROCESS_TABLE + 16;
+[R0 + 11] = 77;
+[R0 + 4] = CREATED;
+[R0 + 1] = 1;
+[R0 + 12] = 0;
+[R0 + 13] = 8*512;
+[R0 + 14] = PAGE_TABLE_BASE + 20;
+[R0 + 15] = 10;
 [66*512] = [65*512 + 1];
 
 PTBR = PAGE_TABLE_BASE + 40;
@@ -111,20 +113,23 @@ PTBR = PAGE_TABLE_BASE + 40;
 [PTBR+17] = "0110";
 [PTBR+18] = 79;
 [PTBR+19] = "0110";
-[PROCESS_TABLE + 32 + 11] = 80;
-[PROCESS_TABLE + 32 + 4] = TERMINATED;
-[PROCESS_TABLE + 32 + 1] = 2;
-[PROCESS_TABLE + 32 + 2] = 1;
-[PROCESS_TABLE + 32 + 12] = 0;
-[PROCESS_TABLE + 32 + 13] = 8*512;
-[PROCESS_TABLE + 32 + 14] = PAGE_TABLE_BASE + 40;
-[PROCESS_TABLE + 32 + 15] = 10;
+
+R0 = PROCESS_TABLE + 32;
+[R0 + 11] = 80;
+[R0 + 4] = TERMINATED;
+[R0 + 1] = 2;
+[R0 + 2] = 1;
+[R0 + 12] = 0;
+[R0 + 13] = 8*512;
+[R0 + 14] = PAGE_TABLE_BASE + 40;
+[R0 + 15] = 10;
 [78*512] = [67*512 + 1];
 
 alias ri R0;
 ri = 0;
+R1 = ([PROCESS_TABLE + 32 + 11])*512 + 496 ;
 while(ri < 16)do
-	[([PROCESS_TABLE + 32 + 11])*512 + 496 + ri] = -1;
+	[R1 + ri] = -1;
 	ri = ri + 2;
 endwhile;
 
@@ -137,12 +142,12 @@ while(pid < 16) do
 	endif;
 	pid = pid + 1;
 endwhile;
-[TERMINAL_STATUS_TABLE] = 0;
-[DISK_STATUS_TABLE] = 0;
-[SYSTEM_STATUS_TABLE + 3] = 0;
-[SYSTEM_STATUS_TABLE + 2] = 45;
-[SYSTEM_STATUS_TABLE + 4] = 0;
-[SYSTEM_STATUS_TABLE + 5] = 0;
+//[TERMINAL_STATUS_TABLE] = 0;
+//[DISK_STATUS_TABLE] = 0;
+//[SYSTEM_STATUS_TABLE + 3] = 0;
+//[SYSTEM_STATUS_TABLE + 2] = 45;
+//[SYSTEM_STATUS_TABLE + 4] = 0;
+//[SYSTEM_STATUS_TABLE + 5] = 0;
 alias m_e R2;
 m_e = 0;
 while(m_e < 128)do
@@ -156,8 +161,9 @@ endwhile;
 pid = 2;
 alias de R3;
 de = 2;
+R4 = DISK_MAP_TABLE + pid*10;
 while(de < 10)do
-	[DISK_MAP_TABLE + pid*10 + de] = -1;
+	[R4 + de] = -1;
 	de = de + 1;
 endwhile;
 [DISK_MAP_TABLE + pid*10 + 4] = 9;
@@ -191,8 +197,6 @@ while(ot < MAX_OPENFILE_NUM)do
 	[OPEN_FILE_TABLE + ot*4 + 1] = 0;
 	ot = ot + 1;
 endwhile;
-[DISK_MAP_TABLE + pid*10 + 4] = 7; 
-[DISK_MAP_TABLE + pid*10 + 5] = 8; 
 //SET USAGE INTO NOT PRINT ON STARTUP
 [75*512 + 4] = 0;
 

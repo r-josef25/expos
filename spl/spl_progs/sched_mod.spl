@@ -15,9 +15,9 @@ if([SYSTEM_STATUS_TABLE + 5] != 0)then
 	nex_pid = 0;
     endif;
 else
-    nex_pid = (cur_pid)%15 + 1;
-    while([(nex_pid * 16 + PROCESS_TABLE) + 4] != READY && [(nex_pid * 16 + PROCESS_TABLE) + 4] != CREATED)do
-	    nex_pid = (nex_pid)%15 + 1;
+    nex_pid = (cur_pid)%14 + 1;
+    while(([(nex_pid * 16 + PROCESS_TABLE) + 4] != READY && [(nex_pid * 16 + PROCESS_TABLE) + 4] != CREATED) || [nex_pid *16 + PROCESS_TABLE + 6] == 1)do
+	    nex_pid = (nex_pid)%14 + 1;
 	    if (nex_pid == cur_pid || (nex_pid == 1 && cur_pid == 0)) then 
 		    nex_pid = 0;
 		    break;
@@ -34,7 +34,6 @@ if(nex_pid == 1 && nex_pid != cur_pid && cur_pid != 0 && [75*512 + 4] == 1)then
 	print [75*512 + 2];
 	[75*512 + 4] = 0;
 endif;
-
 cur_pid = nex_pid;
 proc_te = cur_pid * 16 + PROCESS_TABLE;
 PTLR = [proc_te + 15];

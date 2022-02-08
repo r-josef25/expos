@@ -25,4 +25,5 @@ load --module 2 ../spl/spl_progs/mem_mod.xsm
 load --module 3 ../spl/spl_progs/file_mod.xsm
 load --module 4 ../spl/spl_progs/dev_mod.xsm 
 load --module 5 ../spl/spl_progs/sched_mod.xsm
+load --module 6 ../spl/spl_progs/pager.xsm 
 load --module 7 ../spl/spl_progs/boot_mod.xsm 

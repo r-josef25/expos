@@ -17,12 +17,3 @@ load --exec $HOME/myexpos/expl/samples/as2_25.xsm
 load --exec $HOME/myexpos/expl/samples/as3_25.xsm
 load --exec $HOME/myexpos/expl/samples/as4_25.xsm
 load --exec $HOME/myexpos/expl/samples/as1_27.xsm
-load --exec $HOME/myexpos/expl/samples/as2_27.xsm
-load --exec $HOME/myexpos/expl/samples/as3_27.xsm
-load --exec $HOME/myexpos/expl/samples/pgm1.xsm
-load --exec $HOME/myexpos/expl/samples/as4_27.xsm
-load --exec $HOME/myexpos/expl/samples/pgm2.xsm
-load --exec $HOME/myexpos/expl/samples/as5_27.xsm
-load --exec $HOME/myexpos/expl/samples/m_store.xsm
-load --exec $HOME/myexpos/expl/samples/m_sort.xsm
-load --exec $HOME/myexpos/expl/samples/m_merge.xsm

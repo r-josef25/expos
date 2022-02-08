@@ -105,6 +105,7 @@ if(R1 == 6)then
 	R0 = -1;
 	while (R2 < DISK_SIZE)do
 	    if([DISK_FREE_LIST + R2] == 0)then
+		[DISK_FREE_LIST + R2] = 1;
 		R0 = R2;
 		break;
 	    endif;

@@ -76,7 +76,6 @@ endif;
 		multipop(R3);
 		ent = ent + 1;
 	endwhile;
-breakpoint;
 	ent = 0;
 	while(ent < 10)do
 		[DISK_MAP_TABLE + [PROCESS_TABLE + newpid*16 + 1]*10 + ent] = [DISK_MAP_TABLE + [PROCESS_TABLE + pid*16 + 1]*10 + ent];
